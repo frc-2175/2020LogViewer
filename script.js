@@ -29,6 +29,7 @@ function getSpacetimeEvents(logs) {
             if(log.message === "Spacetime Start") {
                 inProgressEvents[id] = {
                     name: eventName,
+                    id: id,
                     parentID: log.fields.find(field => field.name === "ParentID").value,
                     startTime: log.timestamp,
                     endTime: null,
@@ -80,21 +81,27 @@ function sortIntoTracks(spacetimeEvents) {
     return sortedTracks
 }
 
-function getHeightOfEvents(events) {
+function getHeightOfEvents(events, levels, currentLevel) {
     sortedTracks = sortIntoTracks(events)
     let height = 0
     for(const track of sortedTracks) {
-        const eventHeights = track.map(event => getHeightOfEvent(event))
+        const eventHeights = track.map(event => getHeightOfEvent(event, levels, currentLevel + height))
         const maxHeight = eventHeights.reduce((currentMax, height) => height > currentMax ? height : currentMax)
-        console.log(eventHeights, maxHeight, track.map(event => event.name))
         height += maxHeight
     }
 
     return height
 }
 
-function getHeightOfEvent(event) {
-    return 1 + getHeightOfEvents(event.children)
+function getHeightOfEvent(event, levels, currentLevel) {
+    levels[event.id] = currentLevel
+    return 1 + getHeightOfEvents(event.children, levels, currentLevel + 1)
+}
+
+function getLevels(events) {
+    const levels = {}
+    getHeightOfEvents(events, levels, 0)
+    return levels
 }
 
 function doEventsOverlap(event1, event2) {
@@ -104,8 +111,11 @@ function doEventsOverlap(event1, event2) {
 (async () => {
     const logs = await loadMatch(3)
     const events = getSpacetimeEvents(logs)
+    const levels = getLevels(events)
     console.log(logs)
     console.log(events)
     console.log(sortIntoTracks(events))
-    console.log(getHeightOfEvents(events))
+    console.log(levels)
+
+
 })()
