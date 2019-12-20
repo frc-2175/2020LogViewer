@@ -1,3 +1,6 @@
+const pageStart = 0;
+const pageEnd = 32;
+
 async function loadMatch(match) {
     const response = await fetch(`http://localhost:9000/${match}.log`)
     if(!response.ok) {
@@ -117,5 +120,21 @@ function doEventsOverlap(event1, event2) {
     console.log(sortIntoTracks(events))
     console.log(levels)
 
-
+    function renderEvent(event) {
+        const div = document.createElement("div")
+        div.textContent = event.name
+        div.style.position = "absolute"
+        div.style.height = "20px"
+        div.style.backgroundColor = "#999"
+        div.style.width = `${(event.endTime - event.startTime) / (pageEnd - pageStart) * 100}%`
+        div.style.left = `${event.startTime / (pageEnd - pageStart) * 100}%`
+        div.style.top = `${30 * levels[event.id]}px`
+        document.body.appendChild(div)
+        for(const child of event.children) {
+            renderEvent(child)
+        }
+    }
+    for(const event of events) {
+        renderEvent(event)
+    }
 })()
