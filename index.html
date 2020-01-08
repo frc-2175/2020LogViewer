@@ -4,9 +4,26 @@
         <meta charset="utf-8">
         <title>Log Viewer</title>
         <script src="script.js"></script>
+        <style>
+            .closeButton {
+                position: absolute;
+                right: 5%;
+                top: 5%;
+            }
+            .graphDiv {
+                position: relative;
+            }
+        </style>
     </head>
     <body>
         <div id="top-bar"></div>
-        <div id="content"></div>
+        <div id="content">
+            <div id="spacetime" style="height: 400px"></div>
+            <div id="data"></div>
+            <div id="dataSelector">
+                <input id="seriesSelector">
+                <button id="addSeriesButton">+</button>
+            </div>
+        </div>
     </body>
 </html>

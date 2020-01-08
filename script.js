@@ -1,5 +1,81 @@
 const pageStart = 0;
-const pageEnd = 32;
+const pageEnd = 40;
+const verticalPadding = 10;
+let seriesToPlot = [];
+let dataSeries = {}
+
+window.addEventListener("DOMContentLoaded", () => {
+    (async () => {
+        const logs = await loadMatch(4)
+        const events = getSpacetimeEvents(logs)
+        const levels = getLevels(events)
+        dataSeries = getDataSeries(logs)
+        // console.log(logs)
+        // console.log(events)
+        // console.log(sortIntoTracks(events))
+        // console.log(levels)
+
+        function renderEvent(event) {
+            const div = document.createElement("div")
+            div.textContent = event.name
+            div.style.position = "absolute"
+            div.style.height = "20px"
+            div.style.backgroundColor = "#999"
+            div.style.width = `${(event.endTime - event.startTime) / (pageEnd - pageStart) * 100}%`
+            div.style.left = `${event.startTime / (pageEnd - pageStart) * 100}%`
+            div.style.top = `${30 * levels[event.id]}px`
+            document.querySelector("#spacetime").appendChild(div)
+            for(const child of event.children) {
+                renderEvent(child)
+            }
+        }
+        for(const event of events) {
+            renderEvent(event)
+        }
+
+        console.log(dataSeries)
+    })()
+
+    document.querySelector("#addSeriesButton").addEventListener("click", () => {
+        console.log("do it")
+        const canvas = document.createElement("canvas")
+        canvas.setAttribute("width", 1000)
+        canvas.setAttribute("height", 200)
+
+        seriesToPlot.push({
+            name: document.querySelector("#seriesSelector").value,
+            canvas: canvas,
+        })
+        refresh()
+    })
+})
+
+function refresh() {
+    if(document.querySelector("#data").children.length !== seriesToPlot.length) {
+        document.querySelector("#data").innerHTML = ""
+        for(const series of seriesToPlot) {
+            const div = document.createElement("div")
+            div.setAttribute("data-series", series.name)
+            div.setAttribute("class", "graphDiv")
+            document.querySelector("#data").appendChild(div)
+            div.appendChild(series.canvas)
+
+            const closeButton = document.createElement("button")
+            closeButton.innerHTML = "x"
+            closeButton.setAttribute("class", "closeButton")
+            closeButton.addEventListener("click", () => {
+                seriesToPlot = seriesToPlot.filter(currentSeries => currentSeries.name !== series.name)
+                refresh()
+            })
+
+            div.appendChild(closeButton)
+        }
+    } 
+    
+    for(const series of seriesToPlot) {
+        graphDataOnCanvas(dataSeries[series.name], series.canvas)
+    }
+}
 
 async function loadMatch(match) {
     const response = await fetch(`http://localhost:9000/${match}.log`)
@@ -107,34 +183,101 @@ function getLevels(events) {
     return levels
 }
 
+function getDataSeries(logs) {
+    const dataSeries = {}
+    for(const log of logs) {
+        dataFields = log.fields.filter(field => field.name.toLowerCase().startsWith("data"))
+        for(const dataField of dataFields) {
+            const nameOfSeries = dataField.name.slice(5)
+            if(dataSeries[nameOfSeries] === undefined) {
+                dataSeries[nameOfSeries] = {
+                    points: []
+                }
+            }
+
+            dataSeries[nameOfSeries].points.push({ time: log.timestamp, value: dataField.value })
+        }
+    }
+
+    return dataSeries
+}
+
+function graphDataOnCanvas(dataSeries, canvas) {
+    const ctx = canvas.getContext("2d")
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    const maxValue = Math.max(...dataSeries.points.map(point => point.value))
+    const minValue = Math.min(...dataSeries.points.map(point => point.value))
+
+    function convertToPixels(point) {
+        const x = (point.time - pageStart) / (pageEnd - pageStart) * canvas.width
+        const y = (maxValue - point.value)  / (maxValue - minValue) * (canvas.height - verticalPadding * 2) + verticalPadding
+        return [x, y]
+    }
+
+    for(const point of dataSeries.points) {
+        const [x, y] = convertToPixels(point)
+        drawCircle(ctx, x, y, 5)
+    }
+
+    for(let i = 1; i < dataSeries.points.length; i++) {
+        const point1 = dataSeries.points[i - 1]
+        const point2 = dataSeries.points[i]
+        const [x1, y1] = convertToPixels(point1)
+        const [x2, y2] = convertToPixels(point2)
+
+        drawLine(ctx, x1, y1, x2, y2)
+    }
+
+    drawLine(ctx, 5, verticalPadding, 5, canvas.height - verticalPadding)
+    for(let i = 0; i < 5; i++) {
+        let paddingHeight = (canvas.height - verticalPadding * 2)
+        let height = i * paddingHeight / 4 + verticalPadding
+        let heightInUnits = (paddingHeight - height) / paddingHeight * (maxValue - minValue) + minValue
+        drawLine(ctx, 5, height, 20, height)
+        drawText(ctx, Math.round(heightInUnits * 100) / 100, {x: 27, y: height + 5})
+        drawLine(ctx, 60, height, canvas.width, height, 1, "#aaa")
+    }
+}
+
 function doEventsOverlap(event1, event2) {
     return event1.startTime < event2.endTime && event1.endTime > event2.startTime
 }
 
-(async () => {
-    const logs = await loadMatch(3)
-    const events = getSpacetimeEvents(logs)
-    const levels = getLevels(events)
-    console.log(logs)
-    console.log(events)
-    console.log(sortIntoTracks(events))
-    console.log(levels)
+function drawCircle(context, x, y, radius, color = 'black') {
+    context.beginPath();
+    context.arc(
+        x,
+        y,
+        radius,
+        0,
+        2 * Math.PI,
+        false
+    );
+    context.fillStyle = color;
+    context.fill();
+}
 
-    function renderEvent(event) {
-        const div = document.createElement("div")
-        div.textContent = event.name
-        div.style.position = "absolute"
-        div.style.height = "20px"
-        div.style.backgroundColor = "#999"
-        div.style.width = `${(event.endTime - event.startTime) / (pageEnd - pageStart) * 100}%`
-        div.style.left = `${event.startTime / (pageEnd - pageStart) * 100}%`
-        div.style.top = `${30 * levels[event.id]}px`
-        document.body.appendChild(div)
-        for(const child of event.children) {
-            renderEvent(child)
-        }
-    }
-    for(const event of events) {
-        renderEvent(event)
-    }
-})()
+function drawLine(context, x1, y1, x2, y2, thickness = 2, color = 'black') {
+    context.beginPath();
+    context.moveTo(
+        x1,
+        y1
+    );
+    context.lineTo(
+        x2,
+        y2
+    );
+    context.lineWidth = thickness;
+    context.strokeStyle = color;
+    context.stroke();
+}
+
+function drawText(context, text, origin, color = 'black', size = 14, font = 'Arial') {
+    context.font = size + 'px ' + font;
+    context.fillStyle = color;
+    context.fillText(
+        text,
+        origin.x,
+        origin.y
+    );
+}
