@@ -14,14 +14,15 @@
                 position: relative;
             }
         </style>
+        <link href="normalize.css" rel="stylesheet">
     </head>
     <body>
-        <div id="top-bar"></div>
+        <div id="topBar"><canvas id="topBarCanvas" style="width: 100%; height: 50px"></canvas></div>
         <div id="content">
-            <div id="spacetime" style="height: 400px"></div>
+            <div id="spacetime" style="height: 400px; position: relative"></div>
             <div id="data"></div>
             <div id="dataSelector">
-                <input id="seriesSelector">
+                <select id="seriesSelector"></select>
                 <button id="addSeriesButton">+</button>
             </div>
         </div>

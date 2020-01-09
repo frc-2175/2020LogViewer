@@ -48,6 +48,8 @@ window.addEventListener("DOMContentLoaded", () => {
         })
         refresh()
     })
+
+    renderTopBar()
 })
 
 function refresh() {
@@ -95,6 +97,31 @@ async function loadMatch(match) {
             console.warn("Uh maybe the json parsing didn't go so well there", e, logMessage)
         }
     }
+
+    let dataSeriesNames = []
+    for(const logMessage of logMessages) {
+        for(const logField of logMessage.fields) {
+            if(logField.name.toLowerCase().includes("data")) {
+                let redundant = false
+                for(const seriesName of dataSeriesNames) {
+                    if(seriesName === logField.name) {
+                        redundant = true
+                    }
+                }
+                if(!redundant) {
+                    dataSeriesNames.push(logField.name)
+                }
+            }
+        }
+    }
+
+    for(let dataSeriesName of dataSeriesNames) {
+        const option = document.createElement("option")
+        option.setAttribute("value", dataSeriesName.slice(5))
+        document.querySelector("#seriesSelector").appendChild(option)
+        option.innerHTML = dataSeriesName.slice(5)
+    }
+
     return logMessages
 }
 
@@ -241,6 +268,12 @@ function graphDataOnCanvas(dataSeries, canvas) {
 
 function doEventsOverlap(event1, event2) {
     return event1.startTime < event2.endTime && event1.endTime > event2.startTime
+}
+
+function renderTopBar() {
+    let canvas = document.querySelector("#topBarCanvas")
+    let ctx = canvas.getContext("2d");
+    drawLine(ctx, 0, 0, canvas.width, 0, 20)
 }
 
 function drawCircle(context, x, y, radius, color = 'black') {
