@@ -32,14 +32,26 @@ window.addEventListener("DOMContentLoaded", () => {
         for(const event of events) {
             renderEvent(event)
         }
-
+        
         console.log(dataSeries)
+        
+        function renderOnResize() {
+            for(const event of events) {
+                renderEvent(event)
+            }
+            renderTopBar()
+            for(let series of seriesToPlot) {
+                series.canvas.setAttribute("width", document.body.clientWidth)
+            }
+            refresh()
+        }
+        window.addEventListener("resize", renderOnResize)
     })()
 
     document.querySelector("#addSeriesButton").addEventListener("click", () => {
         console.log("do it")
         const canvas = document.createElement("canvas")
-        canvas.setAttribute("width", 1000)
+        canvas.setAttribute("width", document.body.clientWidth)
         canvas.setAttribute("height", 200)
 
         seriesToPlot.push({
@@ -50,7 +62,9 @@ window.addEventListener("DOMContentLoaded", () => {
     })
 
     renderTopBar()
+
 })
+
 
 function refresh() {
     if(document.querySelector("#data").children.length !== seriesToPlot.length) {
@@ -272,8 +286,16 @@ function doEventsOverlap(event1, event2) {
 
 function renderTopBar() {
     let canvas = document.querySelector("#topBarCanvas")
+    canvas.setAttribute("width", document.body.clientWidth)
+    canvas.setAttribute("height", 50)
     let ctx = canvas.getContext("2d");
-    drawLine(ctx, 0, 0, canvas.width, 0, 20)
+    // drawLine(ctx, 0, 0, canvas.width, 0, 20, "#")
+    for(let i = 0; i < 20; i++) {
+        horizontalPos = i * canvas.width / 19
+        horizontalPosInUnits = horizontalPos / canvas.width * (pageEnd - pageStart) + pageStart
+        drawLine(ctx, horizontalPos, 0, horizontalPos, 10)
+        drawText(ctx, Math.round(horizontalPosInUnits * 10) / 10, {x: horizontalPos - 12, y: 25})
+    }
 }
 
 function drawCircle(context, x, y, radius, color = 'black') {
