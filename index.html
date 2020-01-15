@@ -30,10 +30,21 @@
             #content {
                 margin-top: 450px;
             }
+            #overlayCanvas {
+                z-index: 2;
+                opacity: 0.3;
+                position: fixed;
+                top: 0;
+                pointer-events: none;
+            }
+            #content {
+                z-index: 3;
+            }
         </style>
         <link href="normalize.css" rel="stylesheet">
     </head>
     <body>
+        <canvas id="overlayCanvas"></canvas>
         <div id="topSection">
             <div id="topBar"><canvas id="topBarCanvas"></canvas></div>
             <div id="spacetime" style="height: 400px; position: relative"></div>

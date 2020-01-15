@@ -44,10 +44,12 @@ window.addEventListener("DOMContentLoaded", () => {
                 series.canvas.setAttribute("width", document.body.clientWidth)
             }
             refresh()
+            document.querySelector("#overlayCanvas").setAttribute("width", document.body.clientWidth)
+            document.querySelector("#overlayCanvas").setAttribute("height", window.innerHeight);
         }
         window.addEventListener("resize", renderOnResize)
     })()
-
+    
     document.querySelector("#addSeriesButton").addEventListener("click", () => {
         console.log("do it")
         const canvas = document.createElement("canvas")
@@ -60,9 +62,19 @@ window.addEventListener("DOMContentLoaded", () => {
         })
         refresh()
     })
-
+    
     renderTopBar()
 
+    const overlayCanvas = document.querySelector("#overlayCanvas")
+    overlayCanvas.setAttribute("width", document.body.clientWidth)
+    overlayCanvas.setAttribute("height", window.innerHeight);
+
+    window.addEventListener("mousemove", e => {
+        const ctx = overlayCanvas.getContext("2d")
+        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height)
+        overlayCanvas
+        drawLine(ctx, e.clientX, 0, e.clientX, overlayCanvas.height, 2)
+    })
 })
 
 
