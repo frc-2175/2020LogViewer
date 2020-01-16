@@ -1,20 +1,31 @@
+// Log viewer with spacetime map viewing capabilities
+
+// Variables that represent the horizontal (time) axis range
 const pageStart = 0;
 const pageEnd = 40;
+
+// The padding in the vertical direction on all of the graphs
 const verticalPadding = 10;
+
+// State variables for the series currently being plotted and a list of all
+// of the known data series from the log file
 let seriesToPlot = [];
 let dataSeries = {}
 
+// This runs when the page loads once
 window.addEventListener("DOMContentLoaded", () => {
     (async () => {
+        // Load the log file and parse some data out of it
         const logs = await loadMatch(4)
         const events = getSpacetimeEvents(logs)
         const levels = getLevels(events)
         dataSeries = getDataSeries(logs)
-        // console.log(logs)
-        // console.log(events)
-        // console.log(sortIntoTracks(events))
-        // console.log(levels)
 
+        /**
+         * Renders a single spacetime map on screen. Requires the variables
+         * above (such as levels)
+         * @param {*} event the spacetime event to render on screen
+         */
         function renderEvent(event) {
             const div = document.createElement("div")
             div.textContent = event.name
@@ -29,12 +40,15 @@ window.addEventListener("DOMContentLoaded", () => {
                 renderEvent(child)
             }
         }
+
+        // Render all of the events that were loaded from the log file
         for(const event of events) {
             renderEvent(event)
         }
         
-        console.log(dataSeries)
-        
+        /** 
+         * A function to be called whenever the window is resized
+         */
         function renderOnResize() {
             for(const event of events) {
                 renderEvent(event)
@@ -47,11 +61,16 @@ window.addEventListener("DOMContentLoaded", () => {
             document.querySelector("#overlayCanvas").setAttribute("width", document.body.clientWidth)
             document.querySelector("#overlayCanvas").setAttribute("height", window.innerHeight);
         }
+
+        // This adds the previously defined function as an event listener for 
+        // the window resize event
         window.addEventListener("resize", renderOnResize)
-    })()
+    })() // End of async zone!
     
+    // Whenever the add series button is clicked, the series that is currently
+    // selected under the series selector drop down is then added to our list
+    // of currently plotted series and then the graphs are refreshed.
     document.querySelector("#addSeriesButton").addEventListener("click", () => {
-        console.log("do it")
         const canvas = document.createElement("canvas")
         canvas.setAttribute("width", document.body.clientWidth)
         canvas.setAttribute("height", 200)
@@ -63,12 +82,16 @@ window.addEventListener("DOMContentLoaded", () => {
         refresh()
     })
     
+    // Renders the horizontal axis at the top of the screen
     renderTopBar()
 
+    // This section sets the width and height of the overlay canvas to be the 
+    // full screen width and height
     const overlayCanvas = document.querySelector("#overlayCanvas")
-    overlayCanvas.setAttribute("width", document.body.clientWidth)
-    overlayCanvas.setAttribute("height", window.innerHeight);
+    overlayCanvas.setAttribute("width", window.innerWidth)
+    overlayCanvas.setAttribute("height", window.innerHeight)
 
+    // Adds an overlay redraw action to the event listener for mouse movement
     window.addEventListener("mousemove", e => {
         const ctx = overlayCanvas.getContext("2d")
         ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height)
@@ -77,7 +100,10 @@ window.addEventListener("DOMContentLoaded", () => {
     })
 })
 
-
+/**
+ * This function should be called whenever the state is updated.
+ * Add stuff in here when new state or state-modification methods are created
+ */
 function refresh() {
     if(document.querySelector("#data").children.length !== seriesToPlot.length) {
         document.querySelector("#data").innerHTML = ""
@@ -105,6 +131,12 @@ function refresh() {
     }
 }
 
+/**
+ * Loads the log messages from a specific log file. This also populates
+ * the dataSeries variable with a bunch of names of data series.
+ * @param {Number} match the number match to load
+ * @returns a list of log messages in JSON
+ */
 async function loadMatch(match) {
     const response = await fetch(`http://localhost:9000/${match}.log`)
     if(!response.ok) {
@@ -151,6 +183,11 @@ async function loadMatch(match) {
     return logMessages
 }
 
+/**
+ * Parses a list of log messages and returns formatted spacetime events
+ * @param {*} logs the log messages (in JSON form) to parse
+ * @returns formatted spacetime events
+ */
 function getSpacetimeEvents(logs) {
     const spacetimeEvents = []
     const inProgressEvents = {}
@@ -184,6 +221,11 @@ function getSpacetimeEvents(logs) {
     return spacetimeEvents
 }
 
+/**
+ * Takes a list of spacetime events and sorts them into tracks
+ * depending on whether or not they overlap
+ * @param {*} spacetimeEvents 
+ */
 function sortIntoTracks(spacetimeEvents) {
     const sortedTracks = []
     for(const event of spacetimeEvents) {
@@ -213,6 +255,13 @@ function sortIntoTracks(spacetimeEvents) {
     return sortedTracks
 }
 
+/**
+ * A function used when getting the height of certain spacetime events
+ * @param {*} events the events to get the combined height of
+ * @param {*} levels the levels those events are on
+ * @param {*} currentLevel the current level being worked on
+ * @returns the combined height of all of those events
+ */
 function getHeightOfEvents(events, levels, currentLevel) {
     sortedTracks = sortIntoTracks(events)
     let height = 0
@@ -225,17 +274,30 @@ function getHeightOfEvents(events, levels, currentLevel) {
     return height
 }
 
+/** 
+ * Gets the height of just one event and recurses back into the getHeightOfEvents
+*/
 function getHeightOfEvent(event, levels, currentLevel) {
     levels[event.id] = currentLevel
     return 1 + getHeightOfEvents(event.children, levels, currentLevel + 1)
 }
 
+/**
+ * A wrapper function that gets the levels that each spacetime event is located
+ * @param {*} events a list of spacetime events that are being analyzed
+ * @returns a list of levels that will contain the level of each spacetime event
+ */
 function getLevels(events) {
     const levels = {}
     getHeightOfEvents(events, levels, 0)
     return levels
 }
 
+/**
+ * Extracts the data from log files
+ * @param {*} logs the log files to parse from
+ * @returns a list of data series each containing points
+ */
 function getDataSeries(logs) {
     const dataSeries = {}
     for(const log of logs) {
@@ -255,6 +317,11 @@ function getDataSeries(logs) {
     return dataSeries
 }
 
+/**
+ * Allows a data series to be graphed on a certain canvas
+ * @param {*} dataSeries the series to plot
+ * @param {*} canvas the canvas to plot on
+ */
 function graphDataOnCanvas(dataSeries, canvas) {
     const ctx = canvas.getContext("2d")
     ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -292,10 +359,18 @@ function graphDataOnCanvas(dataSeries, canvas) {
     }
 }
 
+/**
+ * Tells you whether two spacetime events overlap or not
+ * @param {*} event1 
+ * @param {*} event2 
+ */
 function doEventsOverlap(event1, event2) {
     return event1.startTime < event2.endTime && event1.endTime > event2.startTime
 }
 
+/**
+ * Renders the horizontal axis at the top of the screen
+ */
 function renderTopBar() {
     let canvas = document.querySelector("#topBarCanvas")
     canvas.setAttribute("width", document.body.clientWidth)
@@ -310,6 +385,14 @@ function renderTopBar() {
     }
 }
 
+/**
+ * Draws a circle on a canvas
+ * @param {*} context the context of the canvas to draw on
+ * @param {Number} x the x-coordinate of the center
+ * @param {Number} y the y-coordinate of the center
+ * @param {Number} radius the radius of the circle
+ * @param {String} color the fill color of the circle
+ */
 function drawCircle(context, x, y, radius, color = 'black') {
     context.beginPath();
     context.arc(
@@ -324,6 +407,16 @@ function drawCircle(context, x, y, radius, color = 'black') {
     context.fill();
 }
 
+/**
+ * Draws a line on a canvas
+ * @param {*} context the context of the canvas to draw on
+ * @param {Number} x1 the x-coordinate of the starting point
+ * @param {Number} y1 the y-coordinate of the starting point
+ * @param {Number} x2 the x-coordinate of the ending point
+ * @param {Number} y2 the y-coordinate of the ending point
+ * @param {Number} thickness how thick to make the line (pixels)
+ * @param {String} color the color of the line
+ */
 function drawLine(context, x1, y1, x2, y2, thickness = 2, color = 'black') {
     context.beginPath();
     context.moveTo(
@@ -339,6 +432,15 @@ function drawLine(context, x1, y1, x2, y2, thickness = 2, color = 'black') {
     context.stroke();
 }
 
+/**
+ * Draws some text on a canvas
+ * @param {*} context the context of the canvas to draw on
+ * @param {String} text the text to draw
+ * @param {*} origin the origin point of the text being drawn
+ * @param {String} color the color of the text
+ * @param {Number} size the font size
+ * @param {String} font the font family
+ */
 function drawText(context, text, origin, color = 'black', size = 14, font = 'Arial') {
     context.font = size + 'px ' + font;
     context.fillStyle = color;
