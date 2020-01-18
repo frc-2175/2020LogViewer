@@ -1,8 +1,8 @@
 // Log viewer with spacetime map viewing capabilities
 
 // Variables that represent the horizontal (time) axis range
-const pageStart = 0;
-const pageEnd = 40;
+let pageStart = 0;
+let pageEnd = 40;
 
 // The padding in the vertical direction on all of the graphs
 const verticalPadding = 10;
@@ -11,6 +11,10 @@ const verticalPadding = 10;
 // of the known data series from the log file
 let seriesToPlot = [];
 let dataSeries = {}
+
+// State variables for time-axis resizing
+let resizing = false
+let mouseStart
 
 // This runs when the page loads once
 window.addEventListener("DOMContentLoaded", () => {
@@ -33,7 +37,7 @@ window.addEventListener("DOMContentLoaded", () => {
             div.style.height = "20px"
             div.style.backgroundColor = "#999"
             div.style.width = `${(event.endTime - event.startTime) / (pageEnd - pageStart) * 100}%`
-            div.style.left = `${event.startTime / (pageEnd - pageStart) * 100}%`
+            div.style.left = `${(event.startTime - pageStart) / (pageEnd - pageStart) * 100}%`
             div.style.top = `${30 * levels[event.id]}px`
             document.querySelector("#spacetime").appendChild(div)
             for(const child of event.children) {
@@ -50,6 +54,8 @@ window.addEventListener("DOMContentLoaded", () => {
          * A function to be called whenever the window is resized
          */
         function renderOnResize() {
+            document.querySelector("#spacetime").innerHTML = ""
+
             for(const event of events) {
                 renderEvent(event)
             }
@@ -65,12 +71,29 @@ window.addEventListener("DOMContentLoaded", () => {
         // This adds the previously defined function as an event listener for 
         // the window resize event
         window.addEventListener("resize", renderOnResize)
+
+        document.body.addEventListener("mouseup", e => {
+            resizing = false;
+            const ctx = overlayCanvas.getContext("2d")
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height)
+            drawLine(ctx, e.clientX, 0, e.clientX, overlayCanvas.height, 2)
+
+            let click = (mouseStart / window.innerWidth) * (pageEnd - pageStart) + pageStart
+            let unclick = (e.clientX / window.innerWidth) * (pageEnd - pageStart) + pageStart
+
+            if(Math.abs(mouseStart - e.clientX) > 20) {
+                pageStart = e.clientX > mouseStart ? click : unclick
+                pageEnd = e.clientX > mouseStart ? unclick : click
+                renderOnResize()
+            }
+        })
     })() // End of async zone!
     
     // Whenever the add series button is clicked, the series that is currently
     // selected under the series selector drop down is then added to our list
     // of currently plotted series and then the graphs are refreshed.
-    document.querySelector("#addSeriesButton").addEventListener("click", () => {
+    document.querySelector("#addSeriesButton").addEventListener("click", e => {
+        e.stopPropagation()
         const canvas = document.createElement("canvas")
         canvas.setAttribute("width", document.body.clientWidth)
         canvas.setAttribute("height", 200)
@@ -92,12 +115,24 @@ window.addEventListener("DOMContentLoaded", () => {
     overlayCanvas.setAttribute("height", window.innerHeight)
 
     // Adds an overlay redraw action to the event listener for mouse movement
-    window.addEventListener("mousemove", e => {
+    document.body.addEventListener("mousemove", e => {
         const ctx = overlayCanvas.getContext("2d")
         ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height)
-        overlayCanvas
-        drawLine(ctx, e.clientX, 0, e.clientX, overlayCanvas.height, 2)
+        if(!resizing) {
+            drawLine(ctx, e.clientX, 0, e.clientX, overlayCanvas.height, 2)
+        } else {
+            ctx.fillStyle = "#000"
+            ctx.fillRect(mouseStart, 0, e.clientX - mouseStart, overlayCanvas.height)
+        }
+        console.log("mouse move!")
     })
+
+    document.body.addEventListener("mousedown", e => {
+        resizing = true
+        mouseStart = e.clientX
+    })
+
+    
 })
 
 /**
