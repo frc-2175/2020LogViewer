@@ -73,19 +73,23 @@ window.addEventListener("DOMContentLoaded", () => {
         window.addEventListener("resize", renderOnResize)
 
         document.body.addEventListener("mouseup", e => {
-            resizing = false;
-            const ctx = overlayCanvas.getContext("2d")
-            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height)
-            drawLine(ctx, e.clientX, 0, e.clientX, overlayCanvas.height, 2)
+            if(resizing) {
+                resizing = false;
+                const ctx = overlayCanvas.getContext("2d")
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height)
+                drawLine(ctx, e.clientX, 0, e.clientX, overlayCanvas.height, 2)
 
-            let click = (mouseStart / window.innerWidth) * (pageEnd - pageStart) + pageStart
-            let unclick = (e.clientX / window.innerWidth) * (pageEnd - pageStart) + pageStart
+                let click = (mouseStart / window.innerWidth) * (pageEnd - pageStart) + pageStart
+                let unclick = (e.clientX / window.innerWidth) * (pageEnd - pageStart) + pageStart
 
-            if(Math.abs(mouseStart - e.clientX) > 20) {
-                pageStart = e.clientX > mouseStart ? click : unclick
-                pageEnd = e.clientX > mouseStart ? unclick : click
-                renderOnResize()
+                console.log("Click: " + mouseStart + " Unclick: " + e.clientX)
+                if(Math.abs(mouseStart - e.clientX) > 20) {
+                    pageStart = e.clientX > mouseStart ? click : unclick
+                    pageEnd = e.clientX > mouseStart ? unclick : click
+                    renderOnResize()
+                }
             }
+            console.log("Mouse Up")
         })
     })() // End of async zone!
     
@@ -130,9 +134,22 @@ window.addEventListener("DOMContentLoaded", () => {
     document.body.addEventListener("mousedown", e => {
         resizing = true
         mouseStart = e.clientX
+        console.log("Mouse Down")
     })
 
-    
+    document.querySelector("#seriesSelector").addEventListener("mouseup", e => {
+        e.stopPropagation()
+    })
+
+    document.querySelector("#seriesSelector").addEventListener("mousedown", e => {
+        e.stopPropagation()
+    })
+
+    document.body.style.position = "absolute"
+    document.body.style.top = "0"
+    document.body.style.bottom = "0"
+    document.body.style.left = "0"
+    document.body.style.right = "0"
 })
 
 /**
