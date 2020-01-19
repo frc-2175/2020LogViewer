@@ -20,11 +20,32 @@ let mouseStart
 // This runs when the page loads once
 window.addEventListener("DOMContentLoaded", () => {
     (async () => {
+        // Load all of the matches from the server
+        const matches = await loadMatches()
+        
+        // Populate the match selector with all of the values
+        for(const match of matches) {
+            let matchOption = document.createElement("option")
+            matchOption.setAttribute("value", match)
+            matchOption.innerHTML = "Match " + match
+            document.querySelector("#matchSelect").appendChild(matchOption)
+        }
+
         // Load the log file and parse some data out of it
-        const logs = await loadMatch(4)
-        const events = getSpacetimeEvents(logs)
-        const levels = getLevels(events)
+        let logs = await loadMatch(getCurrentMatch())
+        let events = getSpacetimeEvents(logs)
+        let levels = getLevels(events)
         dataSeries = getDataSeries(logs)
+        
+        // Update the log viewer when the current match changes
+        document.querySelector("#matchSelect").addEventListener("change", async () => {
+            logs = await loadMatch(getCurrentMatch())
+            events = getSpacetimeEvents(logs)
+            levels = getLevels(events)
+            dataSeries = getDataSeries(logs)
+            seriesToPlot = []
+            renderOnResize()
+        })
 
         
         /**
@@ -161,6 +182,7 @@ window.addEventListener("DOMContentLoaded", () => {
         })
     })
 
+
     // Makes the body fullscreen so that the mouse event listeners activate
     // everywhere on the page
     document.body.style.position = "absolute"
@@ -197,8 +219,23 @@ function refresh() {
     } 
     
     for(const series of seriesToPlot) {
+        console.log("graphing", dataSeries)
         graphDataOnCanvas(dataSeries[series.name], series.canvas)
     }
+}
+
+async function loadMatches() {
+    const response = await fetch("http://localhost:9000")
+    if(!response.ok) {
+        console.error("The response wasn't okay", response)
+        return
+    }
+    let responseText = await response.text()
+    responseText = responseText.split("\n")
+    for(let i = 0; i < responseText.length; i++) {
+        responseText[i] = responseText[i].split(".")[0]
+    }
+    return responseText
 }
 
 /**
@@ -243,6 +280,7 @@ async function loadMatch(match) {
         }
     }
 
+    document.querySelector("#seriesSelector").innerHTML = ""
     for(let dataSeriesName of dataSeriesNames) {
         const option = document.createElement("option")
         option.setAttribute("value", dataSeriesName.slice(5))
@@ -467,6 +505,10 @@ function renderTopBar() {
         drawLine(ctx, horizontalPos, 3, horizontalPos, 12)
         drawText(ctx, Math.round(horizontalPosInUnits * 10) / 10, {x: horizontalPos - 12, y: 28})
     }
+}
+
+function getCurrentMatch() {
+    return document.querySelector("#matchSelect").value
 }
 
 /**
