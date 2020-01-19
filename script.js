@@ -26,6 +26,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const levels = getLevels(events)
         dataSeries = getDataSeries(logs)
 
+        
         /**
          * Renders a single spacetime map on screen. Requires the variables
          * above (such as levels)
@@ -100,6 +101,9 @@ window.addEventListener("DOMContentLoaded", () => {
             pageEnd = maxEnd
             renderOnResize()
         })
+        
+        // Renders the horizontal axis at the top of the screen
+        renderTopBar()
     })() // End of async zone!
     
     // Whenever the add series button is clicked, the series that is currently
@@ -118,8 +122,6 @@ window.addEventListener("DOMContentLoaded", () => {
         refresh()
     })
     
-    // Renders the horizontal axis at the top of the screen
-    renderTopBar()
 
     // This section sets the width and height of the overlay canvas to be the 
     // full screen width and height
@@ -247,6 +249,20 @@ async function loadMatch(match) {
         document.querySelector("#seriesSelector").appendChild(option)
         option.innerHTML = dataSeriesName.slice(5)
     }
+
+    // Determine the maximum timestamp present in the logs to set
+    // the time axis range for the page
+    let timestamps = []
+    for(let log of logMessages) {
+        timestamps.push(log.timestamp)
+    }
+    console.log(timestamps)
+
+    maxEnd = timestamps.reduce((max, current) => max > current ? max : current)
+    // Add 5% padding on to the end
+    maxEnd += maxEnd / 20
+    console.log(maxEnd)
+    pageEnd = maxEnd
 
     return logMessages
 }
