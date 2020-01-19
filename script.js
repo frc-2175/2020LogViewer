@@ -44,6 +44,8 @@ window.addEventListener("DOMContentLoaded", () => {
             levels = getLevels(events)
             dataSeries = getDataSeries(logs)
             seriesToPlot = []
+            pageStart = 0
+            pageEnd = maxEnd
             renderOnResize()
         })
 
@@ -107,7 +109,6 @@ window.addEventListener("DOMContentLoaded", () => {
                 let click = (mouseStart / window.innerWidth) * (pageEnd - pageStart) + pageStart
                 let unclick = (e.clientX / window.innerWidth) * (pageEnd - pageStart) + pageStart
 
-                console.log("Click: " + mouseStart + " Unclick: " + e.clientX)
                 if(Math.abs(mouseStart - e.clientX) > 20) {
                     pageStart = e.clientX > mouseStart ? click : unclick
                     pageEnd = e.clientX > mouseStart ? unclick : click
@@ -170,14 +171,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Stops the mouse up and down events from activating on any selector
     document.querySelectorAll("select").forEach(element => {
-        console.log("did event listeners for ", element)
         element.addEventListener("mouseup", e => {
-            console.log("stopped")
             e.stopPropagation()
         })
         
         element.addEventListener("mousedown", e => {
-            console.log("stopped")
             e.stopPropagation()
         })
     })
@@ -219,7 +217,6 @@ function refresh() {
     } 
     
     for(const series of seriesToPlot) {
-        console.log("graphing", dataSeries)
         graphDataOnCanvas(dataSeries[series.name], series.canvas)
     }
 }
@@ -294,12 +291,10 @@ async function loadMatch(match) {
     for(let log of logMessages) {
         timestamps.push(log.timestamp)
     }
-    console.log(timestamps)
 
     maxEnd = timestamps.reduce((max, current) => max > current ? max : current)
     // Add 5% padding on to the end
     maxEnd += maxEnd / 20
-    console.log(maxEnd)
     pageEnd = maxEnd
 
     return logMessages
