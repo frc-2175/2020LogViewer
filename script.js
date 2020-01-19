@@ -1,15 +1,16 @@
 // Log viewer with spacetime map viewing capabilities
 
 // Variables that represent the horizontal (time) axis range
-let pageStart = 0;
-let pageEnd = 40;
+let pageStart = 0
+let pageEnd = 40
+let maxEnd = 40
 
 // The padding in the vertical direction on all of the graphs
-const verticalPadding = 10;
+const verticalPadding = 10
 
 // State variables for the series currently being plotted and a list of all
 // of the known data series from the log file
-let seriesToPlot = [];
+let seriesToPlot = []
 let dataSeries = {}
 
 // State variables for time-axis resizing
@@ -65,7 +66,7 @@ window.addEventListener("DOMContentLoaded", () => {
             }
             refresh()
             document.querySelector("#overlayCanvas").setAttribute("width", document.body.clientWidth)
-            document.querySelector("#overlayCanvas").setAttribute("height", window.innerHeight);
+            document.querySelector("#overlayCanvas").setAttribute("height", window.innerHeight)
         }
 
         // This adds the previously defined function as an event listener for 
@@ -76,7 +77,7 @@ window.addEventListener("DOMContentLoaded", () => {
         // mouse is unclicked. Needs to be async to call renderOnResize()
         document.body.addEventListener("mouseup", e => {
             if(resizing) {
-                resizing = false;
+                resizing = false
                 const ctx = overlayCanvas.getContext("2d")
                 ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height)
                 drawLine(ctx, e.clientX, 0, e.clientX, overlayCanvas.height, 2)
@@ -91,6 +92,13 @@ window.addEventListener("DOMContentLoaded", () => {
                     renderOnResize()
                 }
             }
+        })
+
+        // Adds a reset zoom event listener to the corresponding button
+        document.querySelector("#resetZoom").addEventListener("click", () => {
+            pageStart = 0
+            pageEnd = maxEnd
+            renderOnResize()
         })
     })() // End of async zone!
     
@@ -137,13 +145,18 @@ window.addEventListener("DOMContentLoaded", () => {
         mouseStart = e.clientX
     })
 
-    // Stops the mouse up and down events from activating on the series selector
-    document.querySelector("#seriesSelector").addEventListener("mouseup", e => {
-        e.stopPropagation()
-    })
-
-    document.querySelector("#seriesSelector").addEventListener("mousedown", e => {
-        e.stopPropagation()
+    // Stops the mouse up and down events from activating on any selector
+    document.querySelectorAll("select").forEach(element => {
+        console.log("did event listeners for ", element)
+        element.addEventListener("mouseup", e => {
+            console.log("stopped")
+            e.stopPropagation()
+        })
+        
+        element.addEventListener("mousedown", e => {
+            console.log("stopped")
+            e.stopPropagation()
+        })
     })
 
     // Makes the body fullscreen so that the mouse event listeners activate
@@ -430,13 +443,13 @@ function renderTopBar() {
     let canvas = document.querySelector("#topBarCanvas")
     canvas.setAttribute("width", document.body.clientWidth)
     canvas.setAttribute("height", 50)
-    let ctx = canvas.getContext("2d");
-    // drawLine(ctx, 0, 0, canvas.width, 0, 20, "#")
+    let ctx = canvas.getContext("2d")
+    drawLine(ctx, 0, 0, canvas.width, 0, 8)
     for(let i = 0; i < 20; i++) {
         horizontalPos = i * canvas.width / 19
         horizontalPosInUnits = horizontalPos / canvas.width * (pageEnd - pageStart) + pageStart
-        drawLine(ctx, horizontalPos, 0, horizontalPos, 10)
-        drawText(ctx, Math.round(horizontalPosInUnits * 10) / 10, {x: horizontalPos - 12, y: 25})
+        drawLine(ctx, horizontalPos, 3, horizontalPos, 12)
+        drawText(ctx, Math.round(horizontalPosInUnits * 10) / 10, {x: horizontalPos - 12, y: 28})
     }
 }
 
@@ -449,7 +462,7 @@ function renderTopBar() {
  * @param {String} color the fill color of the circle
  */
 function drawCircle(context, x, y, radius, color = 'black') {
-    context.beginPath();
+    context.beginPath()
     context.arc(
         x,
         y,
@@ -457,9 +470,9 @@ function drawCircle(context, x, y, radius, color = 'black') {
         0,
         2 * Math.PI,
         false
-    );
-    context.fillStyle = color;
-    context.fill();
+    )
+    context.fillStyle = color
+    context.fill()
 }
 
 /**
@@ -473,18 +486,18 @@ function drawCircle(context, x, y, radius, color = 'black') {
  * @param {String} color the color of the line
  */
 function drawLine(context, x1, y1, x2, y2, thickness = 2, color = 'black') {
-    context.beginPath();
+    context.beginPath()
     context.moveTo(
         x1,
         y1
-    );
+    )
     context.lineTo(
         x2,
         y2
-    );
-    context.lineWidth = thickness;
-    context.strokeStyle = color;
-    context.stroke();
+    )
+    context.lineWidth = thickness
+    context.strokeStyle = color
+    context.stroke()
 }
 
 /**
@@ -497,11 +510,11 @@ function drawLine(context, x1, y1, x2, y2, thickness = 2, color = 'black') {
  * @param {String} font the font family
  */
 function drawText(context, text, origin, color = 'black', size = 14, font = 'Arial') {
-    context.font = size + 'px ' + font;
-    context.fillStyle = color;
+    context.font = size + 'px ' + font
+    context.fillStyle = color
     context.fillText(
         text,
         origin.x,
         origin.y
-    );
+    )
 }
