@@ -17,6 +17,8 @@ let dataSeries = {}
 let resizing = false
 let mouseStart
 
+const colors = ["999", "#6ca16a", "#d1a141", "#ba98ed"]
+
 // This runs when the page loads once
 window.addEventListener("DOMContentLoaded", () => {
     (async () => {
@@ -68,6 +70,7 @@ window.addEventListener("DOMContentLoaded", () => {
             for(const child of event.children) {
                 renderEvent(child)
             }
+            console.log(event)
         }
 
         // Render all of the events that were loaded from the log file
@@ -156,9 +159,9 @@ window.addEventListener("DOMContentLoaded", () => {
         const ctx = overlayCanvas.getContext("2d")
         ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height)
         if(!resizing) {
-            drawLine(ctx, e.clientX, 0, e.clientX, overlayCanvas.height, 2)
+            drawLine(ctx, e.clientX, 0, e.clientX, overlayCanvas.height, 2, "#000")
         } else {
-            ctx.fillStyle = "#000"
+            ctx.fillStyle = "#003cc7"
             ctx.fillRect(mouseStart, 0, e.clientX - mouseStart, overlayCanvas.height)
         }
     })
