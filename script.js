@@ -72,6 +72,8 @@ window.addEventListener("DOMContentLoaded", () => {
         // the window resize event
         window.addEventListener("resize", renderOnResize)
 
+        // This event listener finishes the resizing of the time axis when the 
+        // mouse is unclicked. Needs to be async to call renderOnResize()
         document.body.addEventListener("mouseup", e => {
             if(resizing) {
                 resizing = false;
@@ -89,7 +91,6 @@ window.addEventListener("DOMContentLoaded", () => {
                     renderOnResize()
                 }
             }
-            console.log("Mouse Up")
         })
     })() // End of async zone!
     
@@ -128,15 +129,15 @@ window.addEventListener("DOMContentLoaded", () => {
             ctx.fillStyle = "#000"
             ctx.fillRect(mouseStart, 0, e.clientX - mouseStart, overlayCanvas.height)
         }
-        console.log("mouse move!")
     })
 
+    // Starts the resizing process of the time axis when the mouse is clicked
     document.body.addEventListener("mousedown", e => {
         resizing = true
         mouseStart = e.clientX
-        console.log("Mouse Down")
     })
 
+    // Stops the mouse up and down events from activating on the series selector
     document.querySelector("#seriesSelector").addEventListener("mouseup", e => {
         e.stopPropagation()
     })
@@ -145,6 +146,8 @@ window.addEventListener("DOMContentLoaded", () => {
         e.stopPropagation()
     })
 
+    // Makes the body fullscreen so that the mouse event listeners activate
+    // everywhere on the page
     document.body.style.position = "absolute"
     document.body.style.top = "0"
     document.body.style.bottom = "0"
