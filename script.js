@@ -17,7 +17,8 @@ let dataSeries = {}
 let resizing = false
 let mouseStart
 
-const colors = ["999", "#6ca16a", "#d1a141", "#ba98ed"]
+const colors = ["#999", "#6ca16a", "#d1a141", "#ba98ed"]
+let currentColors = {}
 
 // This runs when the page loads once
 window.addEventListener("DOMContentLoaded", () => {
@@ -58,11 +59,21 @@ window.addEventListener("DOMContentLoaded", () => {
          * @param {*} event the spacetime event to render on screen
          */
         function renderEvent(event) {
+            const mostParentID = getMostParentID(event, logs)
+            let color
+            if(currentColors[mostParentID]) {
+                color = currentColors[mostParentID]
+            } else {
+                color = colors[Object.keys(currentColors).length % 3]
+                currentColors[mostParentID] = color
+            }
+            console.log("Event: ", event.name, " Color: ", color)
+
             const div = document.createElement("div")
             div.textContent = event.name
             div.style.position = "absolute"
             div.style.height = "20px"
-            div.style.backgroundColor = "#999"
+            div.style.backgroundColor = color
             div.style.width = `${(event.endTime - event.startTime) / (pageEnd - pageStart) * 100}%`
             div.style.left = `${(event.startTime - pageStart) / (pageEnd - pageStart) * 100}%`
             div.style.top = `${30 * levels[event.id]}px`
@@ -70,7 +81,6 @@ window.addEventListener("DOMContentLoaded", () => {
             for(const child of event.children) {
                 renderEvent(child)
             }
-            console.log(event)
         }
 
         // Render all of the events that were loaded from the log file
@@ -507,6 +517,29 @@ function renderTopBar() {
 
 function getCurrentMatch() {
     return document.querySelector("#matchSelect").value
+}
+
+function getMostParentID(event, logs) {
+    // console.log(event)
+    // console.log(logs)
+    let parentID = event.parentID
+    if(parentID === -1) {
+        return event.id
+    } else {
+        let parent
+        for(const log of logs) {
+            if(log.fields.find(field => field.name === "ID").value === parentID) {
+                parent = {
+                    name: log.fields.find(field => field.name === "EventName").value,
+                    id: log.fields.find(field => field.name === "ID").value,
+                    parentID: log.fields.find(field => field.name === "ParentID").value,
+                }
+                break
+            }
+        }
+        // console.log("parent event: ", parent)
+        return getMostParentID(parent, logs)
+    }
 }
 
 /**
