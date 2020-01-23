@@ -17,7 +17,7 @@ let dataSeries = {}
 let resizing = false
 let mouseStart
 
-const colors = ["#999", "#6ca16a", "#d1a141", "#ba98ed"]
+const colors = ["#6ca16a", "#ffa742", "#ba98ed", "#fa6e6e"]
 let currentColors = {}
 
 // This runs when the page loads once
@@ -64,10 +64,9 @@ window.addEventListener("DOMContentLoaded", () => {
             if(currentColors[mostParentID]) {
                 color = currentColors[mostParentID]
             } else {
-                color = colors[Object.keys(currentColors).length % 3]
+                color = colors[Object.keys(currentColors).length % (colors.length)]
                 currentColors[mostParentID] = color
             }
-            console.log("Event: ", event.name, " Color: ", color)
 
             const div = document.createElement("div")
             div.textContent = event.name
@@ -77,6 +76,7 @@ window.addEventListener("DOMContentLoaded", () => {
             div.style.width = `${(event.endTime - event.startTime) / (pageEnd - pageStart) * 100}%`
             div.style.left = `${(event.startTime - pageStart) / (pageEnd - pageStart) * 100}%`
             div.style.top = `${30 * levels[event.id]}px`
+            div.style.lineHeight = "20px"
             document.querySelector("#spacetime").appendChild(div)
             for(const child of event.children) {
                 renderEvent(child)
